@@ -16,7 +16,7 @@ This is the backend for the Text-to-PPT application, an AI-powered service that 
 ## Installation
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/vivekbopaliya/text-to-ppt
    cd text-to-ppt/backend
    ```
 2. **Create and activate a virtual environment:**
