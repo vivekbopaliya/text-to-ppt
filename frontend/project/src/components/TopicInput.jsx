@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import  { useEffect, useState } from 'react'
+import PropTypes from 'prop-types'
 import { useGeneratePPT } from '../hooks/useGeneratePPT'
 import SuggestionBubbles from './SuggestionBubbles'
 
@@ -198,5 +199,13 @@ const TopicInput = ({
     </>
   )
 }
-
+TopicInput.propTypes = {
+  selectedTopic: PropTypes.string,
+  onTopicSelect: PropTypes.func.isRequired,
+  onGenerationStart: PropTypes.func.isRequired,
+  onError: PropTypes.func.isRequired,
+  clientId: PropTypes.string.isRequired,
+  userId: PropTypes.string.isRequired,
+  disabled: PropTypes.bool
+}
 export default TopicInput

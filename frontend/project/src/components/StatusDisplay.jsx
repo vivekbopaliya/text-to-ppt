@@ -1,5 +1,5 @@
-import React from 'react'
 import { usePresentationStatus } from '../hooks/usePresentationStatus'
+import PropTypes from 'prop-types';
 
 const StatusDisplay = ({ presentationId, onComplete, onError }) => {
   const { data: status, error } = usePresentationStatus(presentationId, {
@@ -128,10 +128,19 @@ const StatusDisplay = ({ presentationId, onComplete, onError }) => {
           <button
             onClick={async () => {
               try {
-                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/download/${presentationId}`, {
-                  method: 'GET',
-                });
+                // First get the presentation status to get the download URL
+                const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/status/${presentationId}`);
+                if (!statusResponse.ok) {
+                  throw new Error('Failed to get presentation status');
+                }
                 
+                const statusData = await statusResponse.json();
+                if (!statusData.download_url) {
+                  throw new Error('Download URL not available');
+                }
+
+                // Now download using the Cloudinary URL
+                const response = await fetch(statusData.download_url);
                 if (!response.ok) {
                   throw new Error('Download failed');
                 }
@@ -189,5 +198,10 @@ const StatusDisplay = ({ presentationId, onComplete, onError }) => {
     </div>
   )
 }
+StatusDisplay.propTypes = {
+  presentationId: PropTypes.string.isRequired,
+  onComplete: PropTypes.func,
+  onError: PropTypes.func.isRequired,
+};
 
 export default StatusDisplay

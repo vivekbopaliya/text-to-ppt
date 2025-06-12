@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react'
+import  { useEffect } from 'react'
 
+// eslint-disable-next-line react/prop-types
 const ErrorBanner = ({ message, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {

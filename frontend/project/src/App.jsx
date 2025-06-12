@@ -6,6 +6,7 @@ import StatusDisplay from './components/StatusDisplay'
 import UserStats from './components/UserStats'
 import PresentationList from './components/PresentationList'
 import ErrorBanner from './components/ErrorBanner'
+import { useUserPresentations } from './hooks/useUserPresentations'
 
 function App() {
   const [clientId, setClientId] = useState(() => {
@@ -30,6 +31,20 @@ function App() {
   const [presentations, setPresentations] = useState([])
   const [error, setError] = useState(null)
 
+  const { data: userPresentations, error: presentationsError } = useUserPresentations(userId)
+
+  useEffect(() => {
+    if (userPresentations) {
+      setPresentations(userPresentations)
+    }
+  }, [userPresentations])
+
+  useEffect(() => {
+    if (presentationsError) {
+      setError(presentationsError.message)
+    }
+  }, [presentationsError])
+
   console.log("Presentation client ID:", clientId)
 
   const handleTopicSelect = (topic) => {
@@ -48,15 +63,13 @@ function App() {
   }
 
   const handlePresentationComplete = (presentationData) => {
-    // Add the completed presentation to the list
     setPresentations(prev => [{
-      id: currentPresentationId,
+      id: presentationData.presentation_id,
       topic: presentationData.topic,
       status: 'completed',
       created_at: presentationData.created_at,
       slide_count: presentationData.slide_count
     }, ...prev])
-    // Don't set currentPresentationId to null to keep StatusDisplay visible
   }
 
   const handlePresentationDelete = (presentationId) => {
@@ -76,9 +89,7 @@ function App() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Topic Input Section */}
             <div className="card">
               <h2 className="text-2xl font-bold mb-6 text-gray-100">
                 Create Your Presentation
@@ -92,11 +103,8 @@ function App() {
                 clientId={clientId}
                 userId={userId}
               />
-              
-          
             </div>
 
-            {/* Status Display */}
             {currentPresentationId && (
               <StatusDisplay
                 presentationId={currentPresentationId}
@@ -105,7 +113,6 @@ function App() {
               />
             )}
 
-            {/* Presentations List */}
             <PresentationList
               presentations={presentations}
               onDelete={handlePresentationDelete}
@@ -113,18 +120,15 @@ function App() {
             />
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* User Stats */}
             <UserStats userId={userId} />
 
-            {/* Tips */}
             <div className="card">
               <h3 className="text-lg font-semibold mb-4 text-gray-100">
                 Tips for Better Presentations
               </h3>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li>• Be specific with your topic (e.g.,"Marketing Benefits in IT")</li>
+                <li>• Be specific with your topic : eg &rdquo;Marketing Benefits in IT</li>
                 <li>• Use descriptive topics with at least 2 words</li>
                 <li>• Select from suggested topics for best results</li>
                 <li>• Consider your target audience when choosing topics</li>

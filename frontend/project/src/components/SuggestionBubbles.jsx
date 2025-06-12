@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import  { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { useSuggestions } from '../hooks/useSuggestions'
 
 const SuggestionBubbles = ({ onTopicSelect, disabled }) => {
@@ -139,6 +140,10 @@ const SuggestionBubbles = ({ onTopicSelect, disabled }) => {
       )}
     </div>
   )
+}
+SuggestionBubbles.propTypes = {
+  onTopicSelect: PropTypes.func.isRequired,
+  disabled: PropTypes.bool
 }
 
 export default SuggestionBubbles

@@ -13,6 +13,8 @@ import cloudinary
 from utils.redis import redis_client
 from models.presentation import TopicInput, TopicSuggestion, PresentationRequest, PresentationResponse
 from utils.openai import openai_client
+import json
+
 router = APIRouter()
 
 class PresentationRequest(BaseModel):
@@ -33,7 +35,6 @@ async def root():
 
 @router.post("/suggestions")
 async def get_suggestions(request: SuggestionRequest):
-    """Get topic suggestions based on user input"""
     try:
         prompt = f"""Generate 5 professional presentation topics based on: '{request.topic}'
         
@@ -59,11 +60,8 @@ async def get_suggestions(request: SuggestionRequest):
             temperature=0.7
         )
         
-        # Extract and clean suggestions
         suggestions = response.choices[0].message.content.strip().split('\n')
         suggestions = [s.strip() for s in suggestions if s.strip()]
-        
-        # Remove numbering if present
         suggestions = [s.split('.', 1)[1].strip() if '.' in s else s for s in suggestions]
         
         return {"suggestions": suggestions[:5]}
@@ -71,7 +69,6 @@ async def get_suggestions(request: SuggestionRequest):
     except Exception as e:
         print(f"Error generating suggestions: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate suggestions")
-
 
 @router.post("/generate")
 async def generate_presentation(request: PresentationRequest):
@@ -92,14 +89,38 @@ async def user_stats(user_id: str):
 
 @router.delete("/presentation/{presentation_id}")
 async def delete_presentation(presentation_id: str):
-    """Delete a presentation"""
     try:
-        # Delete from Cloudinary
         cloudinary.uploader.destroy(f"presentations/{presentation_id}")
-        
-        # Delete from Redis
         redis_client.delete(f"presentation:{presentation_id}")
-        
         return {"message": "Presentation deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/presentations/{user_id}")
+async def get_user_presentations(user_id: str):
+    try:
+        presentation_keys = redis_client.keys(f"presentation:*:data")
+        presentations = []
+        
+        for key in presentation_keys:
+            data = redis_client.get(key)
+            if data:
+                presentation_data = json.loads(data)
+                if presentation_data.get("user_id") == user_id:
+                    presentation_id = key.split(":")[1]
+                    status = redis_client.get(f"presentation:{presentation_id}:status")
+                    if status:
+                        presentations.append({
+                            "id": presentation_id,
+                            "topic": presentation_data.get("topic"),
+                            "status": status,
+                            "created_at": presentation_data.get("created_at"),
+                            "slide_count": presentation_data.get("slide_count")
+                        })
+        
+        presentations.sort(key=lambda x: x["created_at"], reverse=True)
+        return presentations
+        
+    except Exception as e:
+        logger.error(f"Error getting user presentations: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get user presentations")

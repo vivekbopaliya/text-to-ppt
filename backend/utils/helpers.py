@@ -33,7 +33,7 @@ def check_daily_limit(user_id: str) -> Dict[str, any]:
     }
 
 
-async def increment_user_count(user_id: str):
+def increment_user_count(user_id: str):
     """Increment user count"""
     try:
         redis_client.incr(get_user_key(user_id))

@@ -1,8 +1,9 @@
-import React from 'react'
+import PropTypes from 'prop-types'
 import { useDeletePresentation } from '../hooks/useDeletePresentation'
 
 const PresentationList = ({ presentations, onDelete, onError }) => {
   const deleteMutation = useDeletePresentation()
+  console.log("presentation:", presentations);
 
   const handleDelete = async (presentationId) => {
     if (!confirm('Are you sure you want to delete this presentation?')) {
@@ -73,14 +74,23 @@ const PresentationList = ({ presentations, onDelete, onError }) => {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/download/${presentation.id}`, {
-                          method: 'GET',
-                        });
+                        // First get the presentation status to get the download URL
+                        const statusResponse = await fetch(`http://localhost:8000/api/v1/status/${presentation.id}`);
+                        if (!statusResponse.ok) {
+                          throw new Error('Failed to get presentation status');
+                        }
                         
+                        const statusData = await statusResponse.json();
+                        if (!statusData.download_url) {
+                          throw new Error('Download URL not available');
+                        }
+
+                        // Now download using the Cloudinary URL
+                        const response = await fetch(statusData.download_url);
                         if (!response.ok) {
                           throw new Error('Download failed');
                         }
-                        
+                        console.log("responmse: ", response)
                         // Get the blob from the response
                         const blob = await response.blob();
                         
@@ -90,7 +100,7 @@ const PresentationList = ({ presentations, onDelete, onError }) => {
                         // Create a temporary link element
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `presentation_${presentation.id}.pptx`;
+                        link.download = `presentation_${presentation.topic}.pptx`;
                         
                         // Append to body, click and remove
                         document.body.appendChild(link);
@@ -134,6 +144,11 @@ const PresentationList = ({ presentations, onDelete, onError }) => {
       </div>
     </div>
   )
+}
+PresentationList.propTypes = {
+  presentations: PropTypes.array.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onError: PropTypes.func.isRequired,
 }
 
 export default PresentationList

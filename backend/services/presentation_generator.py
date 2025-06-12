@@ -17,20 +17,18 @@ from config import settings
 logger = logging.getLogger(__name__)    
 
 class SlideContent:
-    def __init__(self, title: str, content: List[str], slide_type: str = "content", image_query: str = None, speaker_notes: str = "", layout: str = "content"):
+    def __init__(self, title: str, content: List[str], slide_type: str = "content", image_query: str = None, layout: str = "content"):
         self.title = title
         self.content = content
         self.slide_type = slide_type
-        self.image_query = image_query or title
-        self.speaker_notes = speaker_notes
+        self.image_query = image_query or title     
         self.layout = layout
 
 def download_image_from_pexels(query: str, width: int = 800, height: int = 600) -> BytesIO:
-    """Download image from Pexels API"""
     try:
-        api_key = settings.PEXELS_API_KEY  # Ensure API key is set in environment
-        print("API Key:", api_key)  # Debugging line to check API key
-        print("Query:", query)  # Debugging line to check query
+        api_key = settings.PEXELS_API_KEY
+        print("API Key:", api_key)
+        print("Query:", query)
         url = f"https://api.pexels.com/v1/search?query={query.replace(' ', '%20')}&per_page=1"
         headers = {"Authorization": api_key}
         
@@ -49,9 +47,8 @@ def download_image_from_pexels(query: str, width: int = 800, height: int = 600) 
         return None
 
 def download_image_from_pixabay(query: str, width: int = 800, height: int = 600) -> BytesIO:
-    """Download image from Pixabay API"""
     try:
-        api_key = settings.PIXABAY_API_KEY  # Ensure API key is set in environment
+        api_key = settings.PIXABAY_API_KEY
         url = f"https://pixabay.com/api/?key={api_key}&q={query.replace(' ', '%20')}&image_type=photo&per_page=3"
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
@@ -68,7 +65,6 @@ def download_image_from_pixabay(query: str, width: int = 800, height: int = 600)
         return None
 
 def download_image_from_unsplash(query: str, width: int = 800, height: int = 600) -> BytesIO:
-    """Download image from Unsplash API"""
     try:
         url = f"https://source.unsplash.com/{width}x{height}/?{query.replace(' ', '%20')}"
         response = requests.get(url, timeout=10)
@@ -82,40 +78,33 @@ def download_image_from_unsplash(query: str, width: int = 800, height: int = 600
         return None
 
 def download_image(query: str, width: int = 800, height: int = 600) -> BytesIO:
-    """Attempt to download image from multiple APIs"""
-    # Try Pexels first
     image_stream = download_image_from_pexels(query, width, height)
     if image_stream:
         return image_stream
     
-    # Fallback to Pixabay
     image_stream = download_image_from_pixabay(query, width, height)
     if image_stream:
         return image_stream
     
-    # Fallback to Unsplash if both fail
     return download_image_from_unsplash(query, width, height)
 
 def style_text_box(text_frame, font_size=18, is_title=False):
-    """Apply consistent styling to text"""
     for paragraph in text_frame.paragraphs:
         paragraph.font.name = 'Calibri'
         paragraph.font.size = Pt(font_size)
         
         if is_title:
             paragraph.font.bold = True
-            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White for title
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)
             paragraph.alignment = PP_ALIGN.CENTER
         else:
-            paragraph.font.color.rgb = RGBColor(64, 64, 64)  # Dark gray for content
+            paragraph.font.color.rgb = RGBColor(64, 64, 64)
             paragraph.space_after = Pt(6)
 
 def create_title_slide(prs, title: str, subtitle: str = ""):
-    """Create an attractive title slide"""
-    slide_layout = prs.slide_layouts[0]  # Title slide layout
+    slide_layout = prs.slide_layouts[0]
     slide = prs.slides.add_slide(slide_layout)
     
-    # Style title
     title_shape = slide.shapes.title
     title_shape.text = title
     title_frame = title_shape.text_frame
@@ -129,7 +118,6 @@ def create_title_slide(prs, title: str, subtitle: str = ""):
         paragraph.font.color.rgb = RGBColor(31, 78, 121)
         paragraph.alignment = PP_ALIGN.CENTER
     
-    # Add subtitle if provided
     if subtitle and len(slide.placeholders) > 1:
         subtitle_shape = slide.placeholders[1]
         subtitle_shape.text = subtitle
@@ -144,11 +132,9 @@ def create_title_slide(prs, title: str, subtitle: str = ""):
     return slide
 
 def create_agenda_slide(prs, slide_data: SlideContent):
-    """Create a professional agenda slide"""
-    slide_layout = prs.slide_layouts[5]  # Blank layout
+    slide_layout = prs.slide_layouts[5]
     slide = prs.slides.add_slide(slide_layout)
     
-    # Add title
     title_left = Inches(0.5)
     title_top = Inches(0.5)
     title_width = Inches(9)
@@ -164,7 +150,6 @@ def create_agenda_slide(prs, slide_data: SlideContent):
     title_paragraph.font.bold = True
     title_paragraph.font.color.rgb = RGBColor(31, 78, 121)
     
-    # Add agenda items with numbers
     content_left = Inches(1.5)
     content_top = Inches(2)
     content_width = Inches(7)
@@ -191,16 +176,13 @@ def create_agenda_slide(prs, slide_data: SlideContent):
     return slide
 
 def create_content_slide_with_image(prs, slide_data: SlideContent):
-    """Create content slide with image"""
-    slide_layout = prs.slide_layouts[5]  # Blank layout for custom positioning
+    slide_layout = prs.slide_layouts[5]
     slide = prs.slides.add_slide(slide_layout)
     
-    # Download and add image
     image_stream = download_image(slide_data.image_query)
     
     if image_stream:
         try:
-            # Add image on the right side
             img_left = Inches(5.5)
             img_top = Inches(1.5)
             img_width = Inches(4)
@@ -210,7 +192,6 @@ def create_content_slide_with_image(prs, slide_data: SlideContent):
         except Exception as e:
             logger.warning(f"Could not add image: {e}")
     
-    # Add title
     title_left = Inches(0.5)
     title_top = Inches(0.5)
     title_width = Inches(9)
@@ -226,10 +207,9 @@ def create_content_slide_with_image(prs, slide_data: SlideContent):
     title_paragraph.font.bold = True
     title_paragraph.font.color.rgb = RGBColor(31, 78, 121)
     
-    # Add content with better bullet points
     content_left = Inches(0.5)
     content_top = Inches(2)
-    content_width = Inches(4.5)  # Reduced width to make room for image
+    content_width = Inches(4.5)
     content_height = Inches(4.5)
     
     content_box = slide.shapes.add_textbox(content_left, content_top, content_width, content_height)
@@ -336,7 +316,7 @@ def create_section_slide(prs, title: str):
     
     return slide
 
-def create_powerpoint(slides: List[SlideContent], presentation_id: str) -> str:
+def create_powerpoint(slides: List[SlideContent], presentation_id: str, topic: str) -> str:
     """Create PowerPoint presentation from slides with enhanced styling and images"""
     try:
         prs = Presentation()
@@ -393,7 +373,7 @@ def create_powerpoint(slides: List[SlideContent], presentation_id: str) -> str:
             prs.save(temp_file.name)
             
             # Upload to Cloudinary
-            cloudinary_url = upload_to_cloudinary(temp_file.name, presentation_id)
+            cloudinary_url = upload_to_cloudinary(temp_file.name, presentation_id, topic)
             
             if cloudinary_url:
                 # Store URL in Redis
@@ -433,7 +413,6 @@ def _generate_realistic_fallback_slides(topic: str, slide_count: int) -> List[Sl
         content=[],
         slide_type="title",
         image_query=f"{topic} professional business",
-        speaker_notes=f"Welcome to our presentation on {topic}. We'll explore key insights and recommendations."
     ))
     
     # Agenda slide (if enough slides)
@@ -450,7 +429,6 @@ def _generate_realistic_fallback_slides(topic: str, slide_count: int) -> List[Sl
             ],
             slide_type="agenda",
             image_query="business agenda meeting",
-            speaker_notes="Here's our agenda for today's presentation."
         ))
     
     # Generate main content slides with realistic topics
@@ -514,7 +492,6 @@ def _generate_realistic_fallback_slides(topic: str, slide_count: int) -> List[Sl
             content=content_points,
             slide_type="content",
             image_query=image_query,
-            speaker_notes=description,
             layout=slide_layout
         ))
     
@@ -530,7 +507,6 @@ def _generate_realistic_fallback_slides(topic: str, slide_count: int) -> List[Sl
         ],
         slide_type="content",
         image_query=f"{topic} success team collaboration",
-        speaker_notes="Let's summarize the key points and discuss next steps."
     ))
     
     return slides[:slide_count]
@@ -556,13 +532,11 @@ def generate_presentation_content(topic: str, slide_count: int, presentation_typ
         - Add actionable insights and recommendations
         - Use professional business language
         - Create compelling slide titles (6-10 words)
-        - Include speaker notes for each slide
         - Suggest appropriate slide layouts
         
         For each slide, provide:
         - Compelling title that captures the key message
         - 3-6 bullet points with substantial, realistic content
-        - Speaker notes (2-3 sentences explaining the slide)
         - Appropriate slide layout (content, two_column, agenda, etc.)
         - Relevant image search query
         
@@ -577,7 +551,6 @@ def generate_presentation_content(topic: str, slide_count: int, presentation_typ
                     "slide_type": "title|content|section|agenda",
                     "layout": "content|two_column|agenda",
                     "image_query": "professional search terms",
-                    "speaker_notes": "What to say during this slide"
                 }}
             ]
         }}
@@ -609,7 +582,6 @@ def generate_presentation_content(topic: str, slide_count: int, presentation_typ
                     content=slide_info.get("content", ["Content not available"]),
                     slide_type=slide_info.get("slide_type", "content"),
                     image_query=slide_info.get("image_query", f"{topic} professional"),
-                    speaker_notes=slide_info.get("speaker_notes", ""),
                     layout=slide_info.get("layout", "content")
                 )
                 slides.append(slide)

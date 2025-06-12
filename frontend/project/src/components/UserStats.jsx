@@ -1,5 +1,5 @@
-import React from 'react'
 import { useUserStats } from '../hooks/useUserStats'
+import PropTypes from 'prop-types'
 
 const UserStats = ({ userId }) => {
   const { data: stats, isLoading, error } = useUserStats(userId)
@@ -99,6 +99,9 @@ const UserStats = ({ userId }) => {
       </div>
     </div>
   )
+}
+UserStats.propTypes = {
+  userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 }
 
 export default UserStats

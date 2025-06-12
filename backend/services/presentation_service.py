@@ -1,5 +1,4 @@
 # Business logic for presentation generation, suggestions, and file ops
-
 import os
 from fastapi.responses import FileResponse
 import redis
@@ -73,11 +72,9 @@ async def start_presentation_generation(
 ):
     """Generate a presentation asynchronously"""
     try:
-   
-        
         presentation_id = str(uuid.uuid4())
         
-        task = generate_presentation_task.delay(
+        task =  generate_presentation_task.delay(
             presentation_id,
             request_data.selected_topic,
             request_data.preferences.get("slide_count", 10),
@@ -112,8 +109,10 @@ async def get_presentation_status(presentation_id: str):
             data = redis_client.get(f"presentation:{presentation_id}:data")
             if data:
                 presentation_data = json.loads(data)
+                # Use the Cloudinary URL if present
+                download_url = presentation_data.get("cloudinary_url") or f"/api/v1/download/{presentation_id}"
                 response.update({
-                    "download_url": f"/api/v1/download/{presentation_id}",
+                    "download_url": download_url,
                     "created_at": presentation_data["created_at"],
                     "slide_count": presentation_data["slide_count"],
                     "topic": presentation_data["topic"]
@@ -130,21 +129,6 @@ async def get_presentation_status(presentation_id: str):
     except Exception as e:
         logger.error(f"Error getting status: {e}")
         raise HTTPException(status_code=500, detail="Failed to get presentation status")
-
-
-async def get_user_stats(user_id: str):
-    """Get user usage statistics"""
-    try:
-        daily_count = redis_client.get(get_user_key(user_id)) or 0
-        return {
-            "user_id": user_id,
-            "presentations_today": int(daily_count),
-            "daily_limit": settings.MAX_PRESENTATIONS_PER_DAY,
-            "remaining": settings.MAX_PRESENTATIONS_PER_DAY - int(daily_count)
-        }
-    except Exception as e:
-        logger.error(f"Error getting user stats: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get user statistics")
 
 async def get_user_stats(user_id: str):
     """Get user usage statistics"""

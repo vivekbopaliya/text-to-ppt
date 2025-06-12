@@ -12,7 +12,7 @@ cloudinary.config(
     api_secret=settings.CLOUDINARY_API_SECRET
 )
 
-def upload_to_cloudinary(file_path: str, presentation_id: str) -> Optional[str]:
+def upload_to_cloudinary(file_path: str, presentation_id: str, topic: str) -> Optional[str]:
     """
     Upload a PPTX file to Cloudinary and return the URL
     """
@@ -20,7 +20,7 @@ def upload_to_cloudinary(file_path: str, presentation_id: str) -> Optional[str]:
         result = cloudinary.uploader.upload(
             file_path,
             resource_type="raw",
-            public_id=f"presentations/{presentation_id}",
+            public_id=f"presentations/{topic}",
             overwrite=True
         )
         return result.get('secure_url')

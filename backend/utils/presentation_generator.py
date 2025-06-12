@@ -237,6 +237,7 @@ def generate_enhanced_presentation_content(topic: str, slide_count: int = 10) ->
     
     Requirements:
     - Create {slide_count} slides
+    - I REPEAT: CREATE MINIMUM {slide_count} SLIDES
     - Include a title slide
     - Include 2-3 section divider slides
     - Include a thank you slide at the end

@@ -27,7 +27,7 @@ def generate_presentation_task(self, presentation_id: str, topic: str, slide_cou
             slides = generate_presentation_content(topic, slide_count)
         
         # Create PowerPoint file
-        filepath = create_powerpoint(slides, presentation_id)
+        filepath = create_powerpoint(slides, presentation_id, topic)
         
         # Update status to completed
         presentation_data = {
